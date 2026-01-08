@@ -1,0 +1,8 @@
+# outputs
+node_modules
+dist
+out
+.vscode-test
+
+# claude
+.claude/settings.local.json
