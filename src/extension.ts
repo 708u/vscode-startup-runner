@@ -12,7 +12,7 @@ export { escapeHtml } from "./utils/html";
 
 function registerResetCommand(
   context: vscode.ExtensionContext,
-  storage: HashStorage
+  storage: HashStorage,
 ): void {
   const resetCommand = vscode.commands.registerCommand(
     "startupRunner.resetApprovedFiles",
@@ -21,7 +21,7 @@ function registerResetCommand(
 
       if (files.length === 0) {
         vscode.window.showInformationMessage(
-          "Startup Runner: No approved files to reset."
+          "Startup Runner: No approved files to reset.",
         );
         return;
       }
@@ -51,39 +51,16 @@ function registerResetCommand(
       }
 
       vscode.window.showInformationMessage(
-        `Startup Runner: ${selected.length} file(s) have been reset.`
+        `Startup Runner: ${selected.length} file(s) have been reset.`,
       );
-    }
+    },
   );
   context.subscriptions.push(resetCommand);
 }
 
-function collectPendingExecutions(
-  tasks: Task[],
-  workspaceFolders: readonly vscode.WorkspaceFolder[]
-): PendingExecution[] {
-  const pendingExecutions: PendingExecution[] = [];
-
-  for (const folder of workspaceFolders) {
-    for (const task of tasks) {
-      const filePath = path.join(folder.uri.fsPath, task.file);
-      const content = tryReadFile(filePath);
-      if (content) {
-        pendingExecutions.push({
-          filePath,
-          content,
-          hash: getHash(content),
-        });
-      }
-    }
-  }
-
-  return pendingExecutions;
-}
-
 async function processApprovals(
   pendingExecutions: PendingExecution[],
-  storage: HashStorage
+  storage: HashStorage,
 ): Promise<PendingExecution[]> {
   const approved: PendingExecution[] = [];
 
@@ -108,12 +85,19 @@ async function processApprovals(
   return approved;
 }
 
+function getOrCreateTerminal(): vscode.Terminal {
+  const existing = vscode.window.terminals.find(
+    (t) => t.name === TERMINAL_NAME,
+  );
+  return existing ?? vscode.window.createTerminal(TERMINAL_NAME);
+}
+
 function executeApproved(approved: PendingExecution[]): void {
   if (approved.length === 0) {
     return;
   }
 
-  const terminal = vscode.window.createTerminal(TERMINAL_NAME);
+  const terminal = getOrCreateTerminal();
   for (const pending of approved) {
     terminal.sendText(`bash "${pending.filePath}"`);
   }
@@ -121,7 +105,7 @@ function executeApproved(approved: PendingExecution[]): void {
 }
 
 export async function activate(
-  context: vscode.ExtensionContext
+  context: vscode.ExtensionContext,
 ): Promise<void> {
   const storage = new HashStorage(context.globalState);
 
@@ -131,22 +115,32 @@ export async function activate(
     return;
   }
 
-  const config = vscode.workspace.getConfiguration("startupRunner");
-  const tasks = config.get<Task[]>("tasks", []);
-  const enabledTasks = tasks.filter((t) => t.enabled);
-  if (enabledTasks.length === 0) {
-    return;
-  }
-
   const workspaceFolders = vscode.workspace.workspaceFolders;
   if (!workspaceFolders) {
     return;
   }
 
-  const pendingExecutions = collectPendingExecutions(
-    enabledTasks,
-    workspaceFolders
-  );
+  const pendingExecutions: PendingExecution[] = [];
+  for (const folder of workspaceFolders) {
+    const config = vscode.workspace.getConfiguration(
+      "startupRunner",
+      folder.uri,
+    );
+    const tasks = config.get<Task[]>("tasks", []);
+    const enabledTasks = tasks.filter((t) => t.enabled);
+
+    for (const task of enabledTasks) {
+      const filePath = path.join(folder.uri.fsPath, task.file);
+      const content = tryReadFile(filePath);
+      if (content) {
+        pendingExecutions.push({
+          filePath,
+          content,
+          hash: getHash(content),
+        });
+      }
+    }
+  }
   if (pendingExecutions.length === 0) {
     return;
   }
