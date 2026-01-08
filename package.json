@@ -1,8 +1,14 @@
 {
   "name": "startup-runner",
-  "displayName": "startup-runner",
+  "displayName": "Startup Runner",
   "description": "Runs script on start up workspace",
   "version": "0.0.1",
+  "publisher": "708u",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/708u/vscode-startup-runner"
+  },
   "engines": {
     "vscode": "^1.107.0"
   },
@@ -19,6 +25,7 @@
       "properties": {
         "startupRunner.tasks": {
           "type": "array",
+          "scope": "resource",
           "items": {
             "type": "object",
             "properties": {
@@ -64,7 +71,8 @@
     "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "pack": "vsce package --no-dependencies"
   },
   "devDependencies": {
     "@types/mocha": "10.0.10",
@@ -72,6 +80,7 @@
     "@types/vscode": "1.107.0",
     "@vscode/test-cli": "0.0.12",
     "@vscode/test-electron": "2.5.2",
+    "@vscode/vsce": "^3.7.1",
     "esbuild": "0.27.2",
     "eslint": "9.39.2",
     "npm-run-all": "4.1.5",

@@ -3,6 +3,7 @@ node_modules
 dist
 out
 .vscode-test
+*.vsix
 
 # claude
 .claude/settings.local.json
