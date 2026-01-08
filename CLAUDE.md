@@ -23,6 +23,16 @@ pnpm run check-types    # TypeScript type check only
 # Test
 pnpm run test           # Full test (compile-tests + compile + lint + vscode-test)
 pnpm run compile-tests  # Compile tests to out/
+
+# Package
+pnpm run pack           # Generate .vsix file
+```
+
+## Local Install
+
+```bash
+pnpm run pack
+# Then in VS Code: Cmd+Shift+P → "Extensions: Install from VSIX..."
 ```
 
 ## Architecture
