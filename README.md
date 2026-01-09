@@ -45,9 +45,3 @@ This extension contributes the following settings:
   - `enabled`: Enable this task
 
 Default: `[]` (empty, no tasks configured)
-
-## Behavior
-
-- Each task runs in its own isolated terminal named
-  `Startup Runner: {taskName} ({hash})`
-- Duplicate tasks with the same `name` and `file` are ignored
