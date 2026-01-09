@@ -45,3 +45,36 @@ This extension contributes the following settings:
   - `enabled`: Enable this task
 
 Default: `[]` (empty, no tasks configured)
+
+## Security
+
+This extension executes arbitrary shell scripts. Please be aware of the
+following security considerations:
+
+### Security Model
+
+1. **Workspace Trust Integration**: The extension only runs in trusted
+   workspaces. If VS Code's Workspace Trust is not granted, no scripts will
+   execute.
+
+2. **Hash-based Approval**: Each script's content is hashed (SHA256). When a
+   script is first encountered or modified, you must explicitly approve it
+   through a review dialog.
+
+3. **Content Review**: Before approval, the full script content is displayed
+   in a webview panel so you can inspect what will be executed.
+
+### Best Practices
+
+- **Only use in trusted repositories**: Do not enable this extension for
+  repositories from untrusted sources.
+- **Review scripts carefully**: Always read the script content before clicking
+  "Allow". Be cautious of obfuscated code or external downloads
+  (e.g., `curl | bash`).
+- **Use "Allow Once" for unfamiliar scripts**: If unsure, use "Allow Once"
+  instead of permanent approval.
+
+### Commands
+
+- `Startup Runner: Reset Approved Files...`: Revoke previously approved scripts
+  and require re-approval on next startup.
