@@ -42,11 +42,12 @@ Single-file extension (`src/extension.ts`) with these key components:
 - **Activation**: Triggered on `onStartupFinished`, reads tasks from `startupRunner.tasks` configuration
 - **Hash-based approval**: SHA256 hashes stored in `globalState` to remember approved file contents
 - **Webview approval dialog**: Shows file content for review with Allow/Once/Deny options
-- **Terminal execution**: Approved scripts run via `bash "{filePath}"` in a dedicated terminal
+- **Terminal execution**: Each task runs in its own terminal named `Startup Runner: {taskName} ({hash})`
+- **Deduplication**: Tasks with identical `name` and `file` are filtered (first occurrence wins)
 
 Key flow:
 
 1. Extension activates after VS Code startup
-2. Finds enabled tasks and checks for trigger files in workspace roots
+2. Finds enabled tasks, filters duplicates, and checks for trigger files in workspace roots
 3. For each file: check saved hash -> if changed/new, show approval webview
-4. Execute approved files in terminal
+4. Execute approved files in isolated terminals
