@@ -86,11 +86,11 @@ async function processApprovals(
   return approved;
 }
 
-function getOrCreateTerminal(): vscode.Terminal {
-  const existing = vscode.window.terminals.find(
-    (t) => t.name === TERMINAL_NAME,
-  );
-  return existing ?? vscode.window.createTerminal(TERMINAL_NAME);
+function getOrCreateTerminal(taskName: string, hash: string): vscode.Terminal {
+  const shortHash = hash.slice(0, 7);
+  const terminalName = `${TERMINAL_NAME}: ${taskName} (${shortHash})`;
+  const existing = vscode.window.terminals.find((t) => t.name === terminalName);
+  return existing ?? vscode.window.createTerminal(terminalName);
 }
 
 function executeApproved(approved: PendingExecution[]): void {
@@ -98,11 +98,11 @@ function executeApproved(approved: PendingExecution[]): void {
     return;
   }
 
-  const terminal = getOrCreateTerminal();
   for (const pending of approved) {
+    const terminal = getOrCreateTerminal(pending.taskName, pending.hash);
     terminal.sendText(`bash "${pending.filePath}"`);
+    terminal.show(true);
   }
-  terminal.show();
 }
 
 export async function activate(
@@ -130,11 +130,22 @@ export async function activate(
     const tasks = config.get<Task[]>("tasks", []);
     const enabledTasks = tasks.filter((t) => t.enabled);
 
-    for (const task of enabledTasks) {
+    const seen = new Set<string>();
+    const uniqueTasks = enabledTasks.filter((t) => {
+      const key = `${t.name}:${t.file}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+
+    for (const task of uniqueTasks) {
       const filePath = path.join(folder.uri.fsPath, task.file);
       const content = tryReadFile(filePath);
       if (content) {
         pendingExecutions.push({
+          taskName: task.name,
           filePath,
           content,
           hash: getHash(content),

@@ -49,7 +49,7 @@
             ]
           },
           "default": [],
-          "description": "List of tasks with trigger files"
+          "description": "List of tasks with trigger files. Duplicate tasks with the same name and file are ignored."
         }
       }
     },

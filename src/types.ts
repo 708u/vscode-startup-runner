@@ -9,6 +9,7 @@ export interface Task {
 }
 
 export interface PendingExecution {
+  taskName: string;
   filePath: FilePath;
   content: string;
   hash: ContentHash;
