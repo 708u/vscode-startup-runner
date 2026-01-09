@@ -9,10 +9,57 @@ function generateLineNumbers(content: string): string {
   return lines.map((_, i) => `<span>${i + 1}</span>`).join("\n");
 }
 
-function generateApprovalHtml(pending: PendingExecution): string {
+function highlightShellScript(content: string): string {
+  const escaped = escapeHtml(content);
+  const lines = escaped.split("\n");
+
+  return lines
+    .map((line) => {
+      // Shebang
+      if (line.startsWith("#!")) {
+        return `<span class="shebang">${line}</span>`;
+      }
+
+      // Comments (but not shebang)
+      if (line.trimStart().startsWith("#")) {
+        return `<span class="comment">${line}</span>`;
+      }
+
+      // Keywords at the start of line
+      const keywordPattern =
+        /^(\s*)(if|then|else|elif|fi|for|while|do|done|case|esac|function|return|exit|export|source|local|readonly|declare)(\s|$)/;
+      const keywordMatch = line.match(keywordPattern);
+      if (keywordMatch) {
+        const [, indent, keyword, rest] = keywordMatch;
+        const remainder = line.slice(indent.length + keyword.length);
+        return `${indent}<span class="keyword">${keyword}</span>${highlightVariablesAndStrings(remainder)}`;
+      }
+
+      return highlightVariablesAndStrings(line);
+    })
+    .join("\n");
+}
+
+function highlightVariablesAndStrings(line: string): string {
+  // Highlight $VAR and ${VAR} patterns
+  return line.replace(
+    /(\$\{[^}]+\}|\$[A-Za-z_][A-Za-z0-9_]*)/g,
+    '<span class="variable">$1</span>',
+  );
+}
+
+interface ApprovalOptions {
+  isChanged: boolean;
+}
+
+function generateApprovalHtml(
+  pending: PendingExecution,
+  options: ApprovalOptions,
+): string {
   const fileName = path.basename(pending.filePath);
   const lineNumbers = generateLineNumbers(pending.content);
   const shortHash = pending.hash.substring(0, 8);
+  const { isChanged } = options;
 
   return `<!DOCTYPE html>
 <html>
@@ -53,21 +100,57 @@ function generateApprovalHtml(pending: PendingExecution): string {
       border-bottom: 1px solid var(--vscode-widget-border, var(--vscode-panel-border));
     }
 
-    .warning-icon {
+    .status-icon {
       flex-shrink: 0;
       width: 48px;
       height: 48px;
-      background: var(--vscode-inputValidation-warningBackground, rgba(255, 204, 0, 0.1));
       border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
-    .warning-icon svg {
+    .status-icon svg {
       width: 28px;
       height: 28px;
+    }
+
+    .status-icon.new {
+      background: var(--vscode-inputValidation-warningBackground, rgba(255, 204, 0, 0.1));
+    }
+
+    .status-icon.new svg {
       color: var(--vscode-editorWarning-foreground, #cca700);
+    }
+
+    .status-icon.changed {
+      background: var(--vscode-inputValidation-warningBackground, rgba(255, 204, 0, 0.1));
+    }
+
+    .status-icon.changed svg {
+      color: var(--vscode-editorWarning-foreground, #cca700);
+    }
+
+    .change-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .change-badge.changed {
+      background: var(--vscode-inputValidation-warningBackground, rgba(255, 204, 0, 0.15));
+      color: var(--vscode-editorWarning-foreground, #cca700);
+    }
+
+    .change-badge.new {
+      background: var(--vscode-inputValidation-infoBackground, rgba(75, 156, 211, 0.15));
+      color: var(--vscode-editorInfo-foreground, #3794ff);
     }
 
     .header-content {
@@ -127,63 +210,121 @@ function generateApprovalHtml(pending: PendingExecution): string {
     /* Code Section */
     .code-section {
       padding: 0;
+      margin: 16px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--vscode-editorWidget-border, var(--vscode-panel-border));
+      background: var(--vscode-editorWidget-background);
     }
 
     .code-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 24px;
-      background: var(--vscode-editorGroupHeader-tabsBackground);
+      padding: 10px 16px;
+      background: var(--vscode-editorWidget-background);
       border-bottom: 1px solid var(--vscode-widget-border, var(--vscode-panel-border));
     }
 
     .code-header-title {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--vscode-descriptionForeground);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--vscode-foreground);
+    }
+
+    .code-header-title svg {
+      width: 16px;
+      height: 16px;
+      color: var(--vscode-terminal-ansiGreen, #89d185);
     }
 
     .code-container {
       display: flex;
-      max-height: 50vh;
+      max-height: 45vh;
+      min-height: 120px;
       overflow: auto;
-      background: var(--vscode-editor-background);
+      background: var(--vscode-editorWidget-background);
+    }
+
+    /* Custom scrollbar */
+    .code-container::-webkit-scrollbar {
+      width: 14px;
+      height: 14px;
+    }
+
+    .code-container::-webkit-scrollbar-track {
+      background: var(--vscode-scrollbarSlider-background);
+    }
+
+    .code-container::-webkit-scrollbar-thumb {
+      background: var(--vscode-scrollbarSlider-hoverBackground);
+      border-radius: 7px;
+      border: 3px solid transparent;
+    }
+
+    .code-container::-webkit-scrollbar-thumb:hover {
+      background: var(--vscode-scrollbarSlider-activeBackground);
     }
 
     .line-numbers {
       flex-shrink: 0;
       padding: 16px 0;
-      background: var(--vscode-editorLineNumber-background, transparent);
       text-align: right;
       user-select: none;
-      border-right: 1px solid var(--vscode-widget-border, var(--vscode-panel-border));
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      min-width: 50px;
     }
 
     .line-numbers span {
       display: block;
-      padding: 0 12px;
-      font-family: var(--vscode-editor-font-family, monospace);
-      font-size: var(--vscode-editor-font-size, 13px);
-      line-height: 1.5;
-      color: var(--vscode-editorLineNumber-foreground);
+      padding: 0 16px 0 12px;
+      font-family: var(--vscode-editor-font-family, 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace);
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--vscode-editorLineNumber-foreground, rgba(255,255,255,0.4));
     }
 
     .code-content {
       flex: 1;
-      padding: 16px;
+      padding: 16px 20px;
       overflow-x: auto;
     }
 
     .code-content code {
       display: block;
-      font-family: var(--vscode-editor-font-family, monospace);
-      font-size: var(--vscode-editor-font-size, 13px);
-      line-height: 1.5;
+      font-family: var(--vscode-editor-font-family, 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace);
+      font-size: 14px;
+      line-height: 1.6;
       white-space: pre;
       color: var(--vscode-editor-foreground);
+      tab-size: 4;
+    }
+
+    /* Syntax highlighting for shell scripts */
+    .code-content .comment {
+      color: var(--vscode-editorLineNumber-foreground, #6a9955);
+      font-style: italic;
+    }
+
+    .code-content .shebang {
+      color: var(--vscode-terminal-ansiMagenta, #c586c0);
+      font-weight: 600;
+    }
+
+    .code-content .string {
+      color: var(--vscode-terminal-ansiYellow, #ce9178);
+    }
+
+    .code-content .keyword {
+      color: var(--vscode-terminal-ansiBlue, #569cd6);
+      font-weight: 500;
+    }
+
+    .code-content .variable {
+      color: var(--vscode-terminal-ansiCyan, #9cdcfe);
     }
 
     /* Actions Section */
@@ -286,19 +427,30 @@ function generateApprovalHtml(pending: PendingExecution): string {
 <body>
   <div class="card">
     <div class="header">
-      <div class="warning-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-          <line x1="12" y1="9" x2="12" y2="13"/>
-          <line x1="12" y1="17" x2="12.01" y2="17"/>
-        </svg>
+      <div class="status-icon ${isChanged ? "changed" : "new"}">
+        ${
+          isChanged
+            ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>`
+            : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14,2 14,8 20,8"/>
+          <line x1="12" y1="18" x2="12" y2="12"/>
+          <line x1="9" y1="15" x2="15" y2="15"/>
+        </svg>`
+        }
       </div>
       <div class="header-content">
         <h1 class="title">
-          Execute <span class="file-name">${escapeHtml(fileName)}</span>?
+          ${isChanged ? "File Changed: " : "Execute "}<span class="file-name">${escapeHtml(fileName)}</span>${isChanged ? "" : "?"}
         </h1>
         <p class="subtitle">${escapeHtml(pending.filePath)}</p>
         <div class="meta">
+          <span class="change-badge ${isChanged ? "changed" : "new"}">
+            ${isChanged ? "Modified" : "New"}
+          </span>
           <span class="meta-item">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
@@ -322,18 +474,29 @@ function generateApprovalHtml(pending: PendingExecution): string {
 
     <div class="code-section">
       <div class="code-header">
-        <span class="code-header-title">Script Content</span>
+        <span class="code-header-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="4,17 10,11 4,5"/>
+            <line x1="12" y1="19" x2="20" y2="19"/>
+          </svg>
+          Script Content
+        </span>
       </div>
       <div class="code-container">
         <div class="line-numbers">${lineNumbers}</div>
         <div class="code-content">
-          <code>${escapeHtml(pending.content)}</code>
+          <code>${highlightShellScript(pending.content)}</code>
         </div>
       </div>
     </div>
 
     <div class="info-footer">
       <p class="info-text">
+        ${
+          isChanged
+            ? `This file has been modified since last approval. Please review the changes carefully.`
+            : `This is a new file that requires approval before execution.`
+        }
         <strong>Allow (Remember)</strong> saves approval for this file content.
         <strong>Once</strong> runs this time only.
         <strong>Deny</strong> cancels execution.
@@ -379,20 +542,22 @@ function generateApprovalHtml(pending: PendingExecution): string {
 
 export function requestApproval(
   pending: PendingExecution,
+  options: ApprovalOptions = { isChanged: false },
 ): Promise<ApprovalDecision> {
   const fileName = path.basename(pending.filePath);
+  const { isChanged } = options;
 
   return new Promise((resolve) => {
     let resolved = false;
 
     const panel = vscode.window.createWebviewPanel(
       WEBVIEW_ID,
-      `Review: ${fileName}`,
+      isChanged ? `Changed: ${fileName}` : `Review: ${fileName}`,
       vscode.ViewColumn.One,
       { enableScripts: true },
     );
 
-    panel.webview.html = generateApprovalHtml(pending);
+    panel.webview.html = generateApprovalHtml(pending, options);
 
     panel.webview.onDidReceiveMessage((message) => {
       if (!resolved) {

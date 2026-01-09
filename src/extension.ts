@@ -72,7 +72,8 @@ async function processApprovals(
       continue;
     }
 
-    const decision = await requestApproval(pending);
+    const isChanged = savedHash !== undefined;
+    const decision = await requestApproval(pending, { isChanged });
 
     if (decision === "allow") {
       await storage.set(pending.filePath, pending.hash);
