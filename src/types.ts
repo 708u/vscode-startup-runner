@@ -15,4 +15,4 @@ export interface PendingExecution {
   hash: ContentHash;
 }
 
-export type ApprovalDecision = "allow" | "once" | "deny";
+export type ApprovalDecision = "allow" | "allowByPath" | "once" | "deny";

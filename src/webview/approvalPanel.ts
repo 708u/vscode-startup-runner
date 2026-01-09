@@ -1,13 +1,8 @@
-import * as vscode from "vscode";
 import * as path from "path";
+import * as vscode from "vscode";
 import { WEBVIEW_ID } from "../constants";
 import type { ApprovalDecision, PendingExecution } from "../types";
 import { escapeHtml } from "../utils/html";
-
-function generateLineNumbers(content: string): string {
-  const lines = content.split("\n");
-  return lines.map((_, i) => `<span>${i + 1}</span>`).join("\n");
-}
 
 function highlightShellScript(content: string): string {
   const escaped = escapeHtml(content);
@@ -32,7 +27,9 @@ function highlightShellScript(content: string): string {
       if (keywordMatch) {
         const [, indent, keyword, rest] = keywordMatch;
         const remainder = line.slice(indent.length + keyword.length);
-        return `${indent}<span class="keyword">${keyword}</span>${highlightVariablesAndStrings(remainder)}`;
+        return `${indent}<span class="keyword">${keyword}</span>${highlightVariablesAndStrings(
+          remainder
+        )}`;
       }
 
       return highlightVariablesAndStrings(line);
@@ -44,7 +41,7 @@ function highlightVariablesAndStrings(line: string): string {
   // Highlight $VAR and ${VAR} patterns
   return line.replace(
     /(\$\{[^}]+\}|\$[A-Za-z_][A-Za-z0-9_]*)/g,
-    '<span class="variable">$1</span>',
+    '<span class="variable">$1</span>'
   );
 }
 
@@ -54,10 +51,9 @@ interface ApprovalOptions {
 
 function generateApprovalHtml(
   pending: PendingExecution,
-  options: ApprovalOptions,
+  options: ApprovalOptions
 ): string {
   const fileName = path.basename(pending.filePath);
-  const lineNumbers = generateLineNumbers(pending.content);
   const shortHash = pending.hash.substring(0, 8);
   const { isChanged } = options;
 
@@ -144,13 +140,13 @@ function generateApprovalHtml(
     }
 
     .change-badge.changed {
-      background: var(--vscode-inputValidation-warningBackground, rgba(255, 204, 0, 0.15));
-      color: var(--vscode-editorWarning-foreground, #cca700);
+      background: rgba(204, 167, 0, 0.2);
+      color: #cca700;
     }
 
     .change-badge.new {
-      background: var(--vscode-inputValidation-infoBackground, rgba(75, 156, 211, 0.15));
-      color: var(--vscode-editorInfo-foreground, #3794ff);
+      background: rgba(25, 118, 210, 0.2);
+      color: #1976d2;
     }
 
     .header-content {
@@ -242,11 +238,11 @@ function generateApprovalHtml(
     }
 
     .code-container {
-      display: flex;
       max-height: 45vh;
       min-height: 120px;
       overflow: auto;
-      background: var(--vscode-editorWidget-background);
+      background: #282c34;
+      padding: 20px 24px;
     }
 
     /* Custom scrollbar */
@@ -269,28 +265,9 @@ function generateApprovalHtml(
       background: var(--vscode-scrollbarSlider-activeBackground);
     }
 
-    .line-numbers {
-      flex-shrink: 0;
-      padding: 16px 0;
-      text-align: right;
-      user-select: none;
-      border-right: 1px solid rgba(255, 255, 255, 0.1);
-      min-width: 50px;
-    }
-
-    .line-numbers span {
-      display: block;
-      padding: 0 16px 0 12px;
-      font-family: var(--vscode-editor-font-family, 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace);
-      font-size: 14px;
-      line-height: 1.6;
-      color: var(--vscode-editorLineNumber-foreground, rgba(255,255,255,0.4));
-    }
-
     .code-content {
-      flex: 1;
-      padding: 16px 20px;
       overflow-x: auto;
+      background: #282c34;
     }
 
     .code-content code {
@@ -327,100 +304,159 @@ function generateApprovalHtml(
       color: var(--vscode-terminal-ansiCyan, #9cdcfe);
     }
 
-    /* Actions Section */
-    .actions {
+    /* Choice Cards Section */
+    .choices {
       display: flex;
-      gap: 12px;
-      padding: 20px 24px;
-      background: var(--vscode-editorWidget-background);
-      border-top: 1px solid var(--vscode-widget-border, var(--vscode-panel-border));
+      flex-direction: column;
+      gap: 8px;
+      padding: 16px 24px 24px;
     }
 
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 6px;
-      font-family: var(--vscode-font-family);
-      font-size: 14px;
-      font-weight: 500;
+    .choice-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 14px 16px;
+      border: 1px solid var(--vscode-widget-border, var(--vscode-panel-border));
+      border-radius: 8px;
+      background: var(--vscode-editorWidget-background);
       cursor: pointer;
       transition: all 0.15s ease;
       outline: none;
+      text-align: left;
+      width: 100%;
+      font-family: var(--vscode-font-family);
     }
 
-    .btn:focus-visible {
+    .choice-card:hover {
+      background: var(--vscode-list-hoverBackground);
+      border-color: var(--vscode-focusBorder);
+    }
+
+    .choice-card:focus-visible {
       outline: 2px solid var(--vscode-focusBorder);
       outline-offset: 2px;
     }
 
-    .btn svg {
-      width: 16px;
-      height: 16px;
+    .choice-card:active {
+      transform: scale(0.995);
     }
 
-    .btn-primary {
-      background: var(--vscode-button-background);
-      color: var(--vscode-button-foreground);
+    .choice-card.primary {
+      border-color: #1976d2;
+      background: #1976d2;
     }
 
-    .btn-primary:hover {
-      background: var(--vscode-button-hoverBackground);
+    .choice-card.primary:hover {
+      background: #1565c0;
+      border-color: #1565c0;
     }
 
-    .btn-primary:active {
-      transform: scale(0.98);
+    .choice-card.primary .choice-title,
+    .choice-card.primary .choice-desc,
+    .choice-card.primary .choice-icon svg {
+      color: #fff;
     }
 
-    .btn-secondary {
-      background: var(--vscode-button-secondaryBackground);
-      color: var(--vscode-button-secondaryForeground);
+    .choice-card.warning {
+      border-color: var(--vscode-editorWarning-foreground, #cca700);
+      border-width: 2px;
     }
 
-    .btn-secondary:hover {
-      background: var(--vscode-button-secondaryHoverBackground);
+    .choice-card.warning:hover {
+      background: var(--vscode-inputValidation-warningBackground, rgba(255, 204, 0, 0.1));
     }
 
-    .btn-secondary:active {
-      transform: scale(0.98);
+    .choice-card.danger {
+      border-color: var(--vscode-errorForeground);
     }
 
-    .btn-danger {
-      background: transparent;
+    .choice-card.danger:hover {
+      background: var(--vscode-inputValidation-errorBackground, rgba(255, 0, 0, 0.08));
+    }
+
+    .choice-icon {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .choice-icon svg {
+      width: 22px;
+      height: 22px;
+      color: var(--vscode-foreground);
+    }
+
+    .choice-card.primary .choice-icon {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .choice-card.primary .choice-icon svg {
+      color: #fff;
+    }
+
+    .choice-card.secondary .choice-icon {
+      background: rgba(128, 128, 128, 0.2);
+    }
+
+    .choice-card.secondary .choice-icon svg {
+      color: var(--vscode-descriptionForeground);
+    }
+
+    .choice-card.warning .choice-icon {
+      background: rgba(204, 167, 0, 0.25);
+    }
+
+    .choice-card.warning .choice-icon svg {
+      color: var(--vscode-editorWarning-foreground, #cca700);
+    }
+
+    .choice-card.danger .choice-icon {
+      background: rgba(255, 85, 85, 0.2);
+    }
+
+    .choice-card.danger .choice-icon svg {
       color: var(--vscode-errorForeground);
-      border: 1px solid var(--vscode-errorForeground);
     }
 
-    .btn-danger:hover {
-      background: var(--vscode-inputValidation-errorBackground, rgba(255, 0, 0, 0.1));
-    }
-
-    .btn-danger:active {
-      transform: scale(0.98);
-    }
-
-    .spacer {
+    .choice-content {
       flex: 1;
+      min-width: 0;
     }
 
-    /* Info Footer */
-    .info-footer {
-      padding: 16px 24px;
-      background: var(--vscode-editorWidget-background);
-      border-top: 1px solid var(--vscode-widget-border, var(--vscode-panel-border));
+    .choice-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--vscode-foreground);
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
-    .info-text {
+    .choice-desc {
       font-size: 12px;
       color: var(--vscode-descriptionForeground);
-      line-height: 1.5;
+      line-height: 1.4;
     }
 
-    .info-text strong {
-      color: var(--vscode-foreground);
+    .danger-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: var(--vscode-editorWarning-foreground, #cca700);
+      color: #000;
     }
   </style>
 </head>
@@ -444,7 +480,11 @@ function generateApprovalHtml(
       </div>
       <div class="header-content">
         <h1 class="title">
-          ${isChanged ? "File Changed: " : "Execute "}<span class="file-name">${escapeHtml(fileName)}</span>${isChanged ? "" : "?"}
+          ${
+            isChanged ? "File Changed: " : "Execute "
+          }<span class="file-name">${escapeHtml(fileName)}</span>${
+    isChanged ? "" : "?"
+  }
         </h1>
         <p class="subtitle">${escapeHtml(pending.filePath)}</p>
         <div class="meta">
@@ -483,49 +523,65 @@ function generateApprovalHtml(
         </span>
       </div>
       <div class="code-container">
-        <div class="line-numbers">${lineNumbers}</div>
         <div class="code-content">
           <code>${highlightShellScript(pending.content)}</code>
         </div>
       </div>
     </div>
 
-    <div class="info-footer">
-      <p class="info-text">
-        ${
-          isChanged
-            ? `This file has been modified since last approval. Please review the changes carefully.`
-            : `This is a new file that requires approval before execution.`
-        }
-        <strong>Allow (Remember)</strong> saves approval for this file content.
-        <strong>Once</strong> runs this time only.
-        <strong>Deny</strong> cancels execution.
-      </p>
-    </div>
+    <div class="choices">
+      <button class="choice-card primary" onclick="respond('allow')">
+        <div class="choice-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22,4 12,14.01 9,11.01"/>
+          </svg>
+        </div>
+        <div class="choice-content">
+          <div class="choice-title">Allow Content</div>
+          <div class="choice-desc">Approve this exact content. You'll be asked again if the file changes.</div>
+        </div>
+      </button>
 
-    <div class="actions">
-      <button class="btn btn-primary" onclick="respond('allow')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-          <polyline points="22,4 12,14.01 9,11.01"/>
-        </svg>
-        Allow (Remember)
+      <button class="choice-card secondary" onclick="respond('once')">
+        <div class="choice-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12,6 12,12 16,14"/>
+          </svg>
+        </div>
+        <div class="choice-content">
+          <div class="choice-title">Run Once</div>
+          <div class="choice-desc">Execute now without saving approval. You'll be asked again next time.</div>
+        </div>
       </button>
-      <button class="btn btn-secondary" onclick="respond('once')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <polyline points="12,6 12,12 16,14"/>
-        </svg>
-        Once
+
+      <button class="choice-card warning" onclick="respond('allowByPath')">
+        <div class="choice-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </div>
+        <div class="choice-content">
+          <div class="choice-title">Allow by Path <span class="danger-badge">Dangerous</span></div>
+          <div class="choice-desc">Auto-execute even if content changes. Only for trusted dynamic scripts.</div>
+        </div>
       </button>
-      <span class="spacer"></span>
-      <button class="btn btn-danger" onclick="respond('deny')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="15" y1="9" x2="9" y2="15"/>
-          <line x1="9" y1="9" x2="15" y2="15"/>
-        </svg>
-        Deny
+
+      <button class="choice-card danger" onclick="respond('deny')">
+        <div class="choice-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="15" y1="9" x2="9" y2="15"/>
+            <line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+        </div>
+        <div class="choice-content">
+          <div class="choice-title">Deny</div>
+          <div class="choice-desc">Cancel execution and close this dialog.</div>
+        </div>
       </button>
     </div>
   </div>
@@ -542,7 +598,7 @@ function generateApprovalHtml(
 
 export function requestApproval(
   pending: PendingExecution,
-  options: ApprovalOptions = { isChanged: false },
+  options: ApprovalOptions = { isChanged: false }
 ): Promise<ApprovalDecision> {
   const fileName = path.basename(pending.filePath);
   const { isChanged } = options;
@@ -554,7 +610,7 @@ export function requestApproval(
       WEBVIEW_ID,
       isChanged ? `Changed: ${fileName}` : `Review: ${fileName}`,
       vscode.ViewColumn.One,
-      { enableScripts: true },
+      { enableScripts: true }
     );
 
     panel.webview.html = generateApprovalHtml(pending, options);

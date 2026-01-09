@@ -2,6 +2,7 @@ import * as path from "path";
 import * as vscode from "vscode";
 import { TERMINAL_NAME } from "./constants";
 import { HashStorage } from "./storage/hashStorage";
+import { PathApprovalStorage } from "./storage/pathApprovalStorage";
 import type { PendingExecution, Task } from "./types";
 import { tryReadFile } from "./utils/file";
 import { getHash } from "./utils/hash";
@@ -12,26 +13,44 @@ export { escapeHtml } from "./utils/html";
 
 function registerResetCommand(
   context: vscode.ExtensionContext,
-  storage: HashStorage,
+  hashStorage: HashStorage,
+  pathStorage: PathApprovalStorage,
 ): void {
   const resetCommand = vscode.commands.registerCommand(
     "startupRunner.resetApprovedFiles",
     async () => {
-      const files = storage.getAllFilePaths();
+      const hashFiles = hashStorage.getAllFilePaths();
+      const pathFiles = pathStorage.getAllFilePaths();
 
-      if (files.length === 0) {
+      interface ApprovalItem extends vscode.QuickPickItem {
+        filePath: string;
+        storageType: "hash" | "path";
+      }
+
+      const hashItems: ApprovalItem[] = hashFiles.map((f) => ({
+        label: path.basename(f),
+        description: `${f} (content-based)`,
+        filePath: f,
+        storageType: "hash",
+      }));
+
+      const pathItems: ApprovalItem[] = pathFiles.map((f) => ({
+        label: path.basename(f),
+        description: `${f} (path-based)`,
+        filePath: f,
+        storageType: "path",
+      }));
+
+      const allItems = [...hashItems, ...pathItems];
+
+      if (allItems.length === 0) {
         vscode.window.showInformationMessage(
           "Startup Runner: No approved files to reset.",
         );
         return;
       }
 
-      const items: vscode.QuickPickItem[] = files.map((f) => ({
-        label: path.basename(f),
-        description: f,
-      }));
-
-      const selected = await vscode.window.showQuickPick(items, {
+      const selected = await vscode.window.showQuickPick(allItems, {
         title: "Reset Approved Files",
         placeHolder: "Select files to reset",
         canPickMany: true,
@@ -41,13 +60,23 @@ function registerResetCommand(
         return;
       }
 
-      if (selected.length === files.length) {
-        await storage.clear();
-      } else {
-        const filesToRemove = selected
-          .map((item) => item.description)
-          .filter((desc): desc is string => desc !== undefined);
-        await storage.remove(filesToRemove);
+      const hashFilesToRemove = selected
+        .filter((item) => item.storageType === "hash")
+        .map((item) => item.filePath);
+      const pathFilesToRemove = selected
+        .filter((item) => item.storageType === "path")
+        .map((item) => item.filePath);
+
+      if (hashFilesToRemove.length === hashFiles.length) {
+        await hashStorage.clear();
+      } else if (hashFilesToRemove.length > 0) {
+        await hashStorage.remove(hashFilesToRemove);
+      }
+
+      if (pathFilesToRemove.length === pathFiles.length) {
+        await pathStorage.clear();
+      } else if (pathFilesToRemove.length > 0) {
+        await pathStorage.remove(pathFilesToRemove);
       }
 
       vscode.window.showInformationMessage(
@@ -60,12 +89,18 @@ function registerResetCommand(
 
 async function processApprovals(
   pendingExecutions: PendingExecution[],
-  storage: HashStorage,
+  hashStorage: HashStorage,
+  pathStorage: PathApprovalStorage,
 ): Promise<PendingExecution[]> {
   const approved: PendingExecution[] = [];
 
   for (const pending of pendingExecutions) {
-    const savedHash = storage.get(pending.filePath);
+    if (pathStorage.has(pending.filePath)) {
+      approved.push(pending);
+      continue;
+    }
+
+    const savedHash = hashStorage.get(pending.filePath);
 
     if (savedHash === pending.hash) {
       approved.push(pending);
@@ -76,7 +111,10 @@ async function processApprovals(
     const decision = await requestApproval(pending, { isChanged });
 
     if (decision === "allow") {
-      await storage.set(pending.filePath, pending.hash);
+      await hashStorage.set(pending.filePath, pending.hash);
+      approved.push(pending);
+    } else if (decision === "allowByPath") {
+      await pathStorage.add(pending.filePath);
       approved.push(pending);
     } else if (decision === "once") {
       approved.push(pending);
@@ -108,9 +146,10 @@ function executeApproved(approved: PendingExecution[]): void {
 export async function activate(
   context: vscode.ExtensionContext,
 ): Promise<void> {
-  const storage = new HashStorage(context.globalState);
+  const hashStorage = new HashStorage(context.globalState);
+  const pathStorage = new PathApprovalStorage(context.globalState);
 
-  registerResetCommand(context, storage);
+  registerResetCommand(context, hashStorage, pathStorage);
 
   if (!vscode.workspace.isTrusted) {
     return;
@@ -157,7 +196,11 @@ export async function activate(
     return;
   }
 
-  const approved = await processApprovals(pendingExecutions, storage);
+  const approved = await processApprovals(
+    pendingExecutions,
+    hashStorage,
+    pathStorage,
+  );
   executeApproved(approved);
 }
 
