@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm run check-types
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Compile tests
+        run: pnpm run compile-tests
+
+      - name: Compile extension
+        run: pnpm run compile
+
+      - name: Run tests
+        run: xvfb-run -a pnpm run test
