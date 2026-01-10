@@ -72,7 +72,12 @@
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
     "test": "vscode-test",
-    "pack": "vsce package --no-dependencies"
+    "login": "vsce login startup-runner",
+    "pack": "vsce package --no-dependencies",
+    "publish": "vsce publish",
+    "bump:patch": "pnpm version patch --no-git-tag-version",
+    "bump:minor": "pnpm version minor --no-git-tag-version",
+    "bump:major": "pnpm version major --no-git-tag-version"
   },
   "devDependencies": {
     "@types/mocha": "10.0.10",
@@ -80,7 +85,7 @@
     "@types/vscode": "1.107.0",
     "@vscode/test-cli": "0.0.12",
     "@vscode/test-electron": "2.5.2",
-    "@vscode/vsce": "^3.7.1",
+    "@vscode/vsce": "3.7.1",
     "esbuild": "0.27.2",
     "eslint": "9.39.2",
     "npm-run-all": "4.1.5",

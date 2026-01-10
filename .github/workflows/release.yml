@@ -1,0 +1,35 @@
+name: Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  release:
+    if: |
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'release/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create and push tag
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          git tag "v$VERSION"
+          git push origin "v$VERSION"
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm run compile
+
+      - name: Publish to Marketplace
+        run: pnpm exec vsce publish --no-dependencies -p ${{ secrets.VSCE_PAT }}
