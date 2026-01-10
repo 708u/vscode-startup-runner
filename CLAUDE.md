@@ -35,6 +35,16 @@ pnpm run pack
 # Then in VS Code: Cmd+Shift+P → "Extensions: Install from VSIX..."
 ```
 
+## Release
+
+```bash
+git checkout -b release/v0.0.2
+pnpm run bump:patch  # or bump:minor, bump:major
+git add -A && git commit -m "chore: bump version"
+gh pr create --fill
+# Merge PR → CI creates tag and publishes to Marketplace
+```
+
 ## Architecture
 
 Single-file extension (`src/extension.ts`) with these key components:
