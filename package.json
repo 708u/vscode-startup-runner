@@ -3,6 +3,7 @@
   "displayName": "Startup Runner",
   "description": "Runs script on start up workspace",
   "version": "0.0.3",
+  "packageManager": "pnpm@10.27.0",
   "publisher": "708u",
   "license": "MIT",
   "repository": {
