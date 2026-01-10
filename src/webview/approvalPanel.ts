@@ -1,4 +1,4 @@
-import * as path from "path";
+import * as path from "node:path";
 import * as vscode from "vscode";
 import { WEBVIEW_ID } from "../constants";
 import type { ApprovalDecision, PendingExecution } from "../types";
@@ -25,7 +25,7 @@ function highlightShellScript(content: string): string {
         /^(\s*)(if|then|else|elif|fi|for|while|do|done|case|esac|function|return|exit|export|source|local|readonly|declare)(\s|$)/;
       const keywordMatch = line.match(keywordPattern);
       if (keywordMatch) {
-        const [, indent, keyword, rest] = keywordMatch;
+        const [, indent, keyword, _rest] = keywordMatch;
         const remainder = line.slice(indent.length + keyword.length);
         return `${indent}<span class="keyword">${keyword}</span>${highlightVariablesAndStrings(
           remainder
