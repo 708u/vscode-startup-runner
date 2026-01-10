@@ -1,4 +1,4 @@
-import * as crypto from "crypto";
+import * as crypto from "node:crypto";
 import type { ContentHash } from "../types";
 
 export function getHash(content: string): ContentHash {
