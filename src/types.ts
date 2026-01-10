@@ -11,6 +11,7 @@ export interface Task {
 export interface PendingExecution {
   taskName: string;
   filePath: FilePath;
+  storageKey: FilePath;
   content: string;
   hash: ContentHash;
 }
