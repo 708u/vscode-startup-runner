@@ -1,4 +1,4 @@
-import * as path from "path";
+import * as path from "node:path";
 import * as vscode from "vscode";
 import { TERMINAL_NAME } from "./constants";
 import { HashStorage } from "./storage/hashStorage";

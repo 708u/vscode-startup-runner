@@ -1,4 +1,4 @@
-import * as vscode from "vscode";
+import type * as vscode from "vscode";
 import { PATH_APPROVAL_STORAGE_KEY } from "../constants";
 import type { FilePath } from "../types";
 

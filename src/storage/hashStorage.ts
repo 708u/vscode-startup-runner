@@ -1,4 +1,4 @@
-import * as vscode from "vscode";
+import type * as vscode from "vscode";
 import { STORAGE_KEY } from "../constants";
 import type { ApprovedHashes, ContentHash, FilePath } from "../types";
 
