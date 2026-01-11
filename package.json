@@ -51,6 +51,12 @@
           },
           "default": [],
           "description": "List of tasks with trigger files. Duplicate tasks with the same name and file are ignored."
+        },
+        "startupRunner.worktree.shareApproval": {
+          "type": "boolean",
+          "scope": "application",
+          "default": true,
+          "description": "Share approval state across git worktrees. When enabled, approvals are stored using the base repository path."
         }
       }
     },

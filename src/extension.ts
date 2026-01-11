@@ -161,6 +161,12 @@ export async function activate(
     return;
   }
 
+  const globalConfig = vscode.workspace.getConfiguration("startupRunner");
+  const shareApproval = globalConfig.get<boolean>(
+    "worktree.shareApproval",
+    true,
+  );
+
   const pendingExecutions: PendingExecution[] = [];
   for (const folder of workspaceFolders) {
     const config = vscode.workspace.getConfiguration(
@@ -182,7 +188,9 @@ export async function activate(
 
     for (const task of uniqueTasks) {
       const filePath = path.join(folder.uri.fsPath, task.file);
-      const storageKey = resolveToBaseStoragePath(folder.uri.fsPath, task.file);
+      const storageKey = shareApproval
+        ? resolveToBaseStoragePath(folder.uri.fsPath, task.file)
+        : filePath;
       const content = tryReadFile(filePath);
       if (content) {
         pendingExecutions.push({

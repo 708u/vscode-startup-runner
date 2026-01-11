@@ -46,6 +46,12 @@ This extension contributes the following settings:
 
 Default: `[]` (empty, no tasks configured)
 
+- `startupRunner.worktree.shareApproval`: Share approval state across git
+  worktrees (default: `true`)
+  - When `true`, approvals are stored using the base repository path, allowing
+    approval decisions to be shared across all worktrees of the same repository
+  - When `false`, each worktree maintains its own independent approval state
+
 ## Security
 
 This extension executes arbitrary shell scripts. Please be aware of the
