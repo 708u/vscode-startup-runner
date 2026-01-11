@@ -1,5 +1,7 @@
 # startup-runner
 
+[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/708u.startup-runner)](https://marketplace.visualstudio.com/items?itemName=708u.startup-runner)
+
 Automatically run commands from trigger files when a VS Code workspace opens.
 
 ## Features
@@ -45,6 +47,12 @@ This extension contributes the following settings:
   - `enabled`: Enable this task
 
 Default: `[]` (empty, no tasks configured)
+
+- `startupRunner.worktree.shareApproval`: Share approval state across git
+  worktrees (default: `true`)
+  - When `true`, approvals are stored using the base repository path, allowing
+    approval decisions to be shared across all worktrees of the same repository
+  - When `false`, each worktree maintains its own independent approval state
 
 ## Security
 

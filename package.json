@@ -2,7 +2,7 @@
   "name": "startup-runner",
   "displayName": "Startup Runner",
   "description": "Runs script on start up workspace",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "packageManager": "pnpm@10.27.0",
   "publisher": "708u",
   "license": "MIT",
@@ -51,6 +51,12 @@
           },
           "default": [],
           "description": "List of tasks with trigger files. Duplicate tasks with the same name and file are ignored."
+        },
+        "startupRunner.worktree.shareApproval": {
+          "type": "boolean",
+          "scope": "application",
+          "default": true,
+          "description": "Share approval state across git worktrees. When enabled, approvals are stored using the base repository path."
         }
       }
     },
