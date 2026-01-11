@@ -5,6 +5,7 @@ import { HashStorage } from "./storage/hashStorage";
 import { PathApprovalStorage } from "./storage/pathApprovalStorage";
 import type { PendingExecution, Task } from "./types";
 import { tryReadFile } from "./utils/file";
+import { resolveToBaseStoragePath } from "./utils/git";
 import { getHash } from "./utils/hash";
 import { requestApproval } from "./webview/approvalPanel";
 
@@ -95,12 +96,12 @@ async function processApprovals(
   const approved: PendingExecution[] = [];
 
   for (const pending of pendingExecutions) {
-    if (pathStorage.has(pending.filePath)) {
+    if (pathStorage.has(pending.storageKey)) {
       approved.push(pending);
       continue;
     }
 
-    const savedHash = hashStorage.get(pending.filePath);
+    const savedHash = hashStorage.get(pending.storageKey);
 
     if (savedHash === pending.hash) {
       approved.push(pending);
@@ -111,10 +112,10 @@ async function processApprovals(
     const decision = await requestApproval(pending, { isChanged });
 
     if (decision === "allow") {
-      await hashStorage.set(pending.filePath, pending.hash);
+      await hashStorage.set(pending.storageKey, pending.hash);
       approved.push(pending);
     } else if (decision === "allowByPath") {
-      await pathStorage.add(pending.filePath);
+      await pathStorage.add(pending.storageKey);
       approved.push(pending);
     } else if (decision === "once") {
       approved.push(pending);
@@ -160,6 +161,12 @@ export async function activate(
     return;
   }
 
+  const globalConfig = vscode.workspace.getConfiguration("startupRunner");
+  const shareApproval = globalConfig.get<boolean>(
+    "worktree.shareApproval",
+    true,
+  );
+
   const pendingExecutions: PendingExecution[] = [];
   for (const folder of workspaceFolders) {
     const config = vscode.workspace.getConfiguration(
@@ -181,11 +188,15 @@ export async function activate(
 
     for (const task of uniqueTasks) {
       const filePath = path.join(folder.uri.fsPath, task.file);
+      const storageKey = shareApproval
+        ? resolveToBaseStoragePath(folder.uri.fsPath, task.file)
+        : filePath;
       const content = tryReadFile(filePath);
       if (content) {
         pendingExecutions.push({
           taskName: task.name,
           filePath,
+          storageKey,
           content,
           hash: getHash(content),
         });
