@@ -1,5 +1,7 @@
 # startup-runner
 
+[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/708u.startup-runner)](https://marketplace.visualstudio.com/items?itemName=708u.startup-runner)
+
 Automatically run commands from trigger files when a VS Code workspace opens.
 
 ## Features
