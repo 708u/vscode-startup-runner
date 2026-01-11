@@ -1,48 +1,34 @@
 import * as path from "node:path";
+import Prism from "prismjs";
+import "prismjs/components/prism-bash";
+import "prismjs/components/prism-markdown";
 import * as vscode from "vscode";
 import { WEBVIEW_ID } from "../constants";
 import type { ApprovalDecision, PendingExecution } from "../types";
 import { escapeHtml } from "../utils/html";
 
-function highlightShellScript(content: string): string {
-  const escaped = escapeHtml(content);
-  const lines = escaped.split("\n");
+type SupportedLanguage = "bash" | "markdown" | "text";
 
-  return lines
-    .map((line) => {
-      // Shebang
-      if (line.startsWith("#!")) {
-        return `<span class="shebang">${line}</span>`;
-      }
-
-      // Comments (but not shebang)
-      if (line.trimStart().startsWith("#")) {
-        return `<span class="comment">${line}</span>`;
-      }
-
-      // Keywords at the start of line
-      const keywordPattern =
-        /^(\s*)(if|then|else|elif|fi|for|while|do|done|case|esac|function|return|exit|export|source|local|readonly|declare)(\s|$)/;
-      const keywordMatch = line.match(keywordPattern);
-      if (keywordMatch) {
-        const [, indent, keyword, _rest] = keywordMatch;
-        const remainder = line.slice(indent.length + keyword.length);
-        return `${indent}<span class="keyword">${keyword}</span>${highlightVariablesAndStrings(
-          remainder
-        )}`;
-      }
-
-      return highlightVariablesAndStrings(line);
-    })
-    .join("\n");
+function detectLanguage(filePath: string): SupportedLanguage {
+  const ext = path.extname(filePath).toLowerCase();
+  switch (ext) {
+    case ".sh":
+    case ".bash":
+    case ".zsh":
+      return "bash";
+    case ".md":
+    case ".markdown":
+      return "markdown";
+    default:
+      return "text";
+  }
 }
 
-function highlightVariablesAndStrings(line: string): string {
-  // Highlight $VAR and ${VAR} patterns
-  return line.replace(
-    /(\$\{[^}]+\}|\$[A-Za-z_][A-Za-z0-9_]*)/g,
-    '<span class="variable">$1</span>'
-  );
+function highlightCode(content: string, language: SupportedLanguage): string {
+  if (language === "text" || !Prism.languages[language]) {
+    return escapeHtml(content);
+  }
+  return Prism.highlight(content, Prism.languages[language], language);
 }
 
 interface ApprovalOptions {
@@ -51,11 +37,13 @@ interface ApprovalOptions {
 
 function generateApprovalHtml(
   pending: PendingExecution,
-  options: ApprovalOptions
+  options: ApprovalOptions,
 ): string {
   const fileName = path.basename(pending.filePath);
   const shortHash = pending.hash.substring(0, 8);
   const { isChanged } = options;
+  const language = detectLanguage(pending.filePath);
+  const highlightedContent = highlightCode(pending.content, language);
 
   return `<!DOCTYPE html>
 <html>
@@ -280,28 +268,69 @@ function generateApprovalHtml(
       tab-size: 4;
     }
 
-    /* Syntax highlighting for shell scripts */
-    .code-content .comment {
+    /* Prism.js 共通トークンクラス */
+    .code-content .token.comment,
+    .code-content .token.prolog {
       color: var(--vscode-editorLineNumber-foreground, #6a9955);
       font-style: italic;
     }
 
-    .code-content .shebang {
-      color: var(--vscode-terminal-ansiMagenta, #c586c0);
-      font-weight: 600;
-    }
-
-    .code-content .string {
+    .code-content .token.string,
+    .code-content .token.char,
+    .code-content .token.url {
       color: var(--vscode-terminal-ansiYellow, #ce9178);
     }
 
-    .code-content .keyword {
+    .code-content .token.keyword,
+    .code-content .token.builtin {
       color: var(--vscode-terminal-ansiBlue, #569cd6);
       font-weight: 500;
     }
 
-    .code-content .variable {
+    .code-content .token.variable,
+    .code-content .token.function {
       color: var(--vscode-terminal-ansiCyan, #9cdcfe);
+    }
+
+    .code-content .token.operator,
+    .code-content .token.punctuation {
+      color: var(--vscode-foreground);
+    }
+
+    /* Markdown専用トークン */
+    .code-content .token.title,
+    .code-content .token.important {
+      color: var(--vscode-terminal-ansiBlue, #569cd6);
+      font-weight: 700;
+    }
+
+    .code-content .token.bold {
+      font-weight: 700;
+    }
+
+    .code-content .token.italic {
+      font-style: italic;
+    }
+
+    .code-content .token.strike {
+      text-decoration: line-through;
+    }
+
+    .code-content .token.list {
+      color: var(--vscode-terminal-ansiYellow, #ce9178);
+    }
+
+    .code-content .token.code {
+      color: var(--vscode-terminal-ansiGreen, #89d185);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.1em 0.3em;
+      border-radius: 3px;
+    }
+
+    /* Bash専用トークン */
+    .code-content .token.shebang {
+      color: var(--vscode-terminal-ansiMagenta, #c586c0);
+      font-weight: 600;
     }
 
     /* Choice Cards Section */
@@ -483,8 +512,8 @@ function generateApprovalHtml(
           ${
             isChanged ? "File Changed: " : "Execute "
           }<span class="file-name">${escapeHtml(fileName)}</span>${
-    isChanged ? "" : "?"
-  }
+            isChanged ? "" : "?"
+          }
         </h1>
         <p class="subtitle">${escapeHtml(pending.filePath)}</p>
         <div class="meta">
@@ -524,7 +553,7 @@ function generateApprovalHtml(
       </div>
       <div class="code-container">
         <div class="code-content">
-          <code>${highlightShellScript(pending.content)}</code>
+          <code>${highlightedContent}</code>
         </div>
       </div>
     </div>
@@ -598,7 +627,7 @@ function generateApprovalHtml(
 
 export function requestApproval(
   pending: PendingExecution,
-  options: ApprovalOptions = { isChanged: false }
+  options: ApprovalOptions = { isChanged: false },
 ): Promise<ApprovalDecision> {
   const fileName = path.basename(pending.filePath);
   const { isChanged } = options;
@@ -610,7 +639,7 @@ export function requestApproval(
       WEBVIEW_ID,
       isChanged ? `Changed: ${fileName}` : `Review: ${fileName}`,
       vscode.ViewColumn.One,
-      { enableScripts: true }
+      { enableScripts: true },
     );
 
     panel.webview.html = generateApprovalHtml(pending, options);
