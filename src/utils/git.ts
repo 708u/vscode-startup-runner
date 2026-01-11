@@ -3,8 +3,8 @@ import * as path from "path";
 import type { FilePath } from "../types";
 
 /**
- * worktreeなら分岐元（base repo）のパスを返す
- * メインリポジトリならnullを返す
+ * Returns the base repository path if this is a worktree.
+ * Returns null if this is the main repository.
  */
 export function getBaseRepoPath(workspacePath: string): string | null {
   const gitPath = path.join(workspacePath, ".git");
@@ -45,8 +45,8 @@ export function getBaseRepoPath(workspacePath: string): string | null {
 }
 
 /**
- * storage用に正規化されたパスを返す
- * worktreeの場合は分岐元のパスに変換、そうでなければそのまま返す
+ * Returns a normalized path for storage purposes.
+ * If this is a worktree, converts to the base repository path; otherwise returns as-is.
  */
 export function resolveToBaseStoragePath(
   workspacePath: string,
