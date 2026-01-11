@@ -1,7 +1,6 @@
 import * as path from "node:path";
 import Prism from "prismjs";
 import "prismjs/components/prism-bash";
-import "prismjs/components/prism-markdown";
 import * as vscode from "vscode";
 import { WEBVIEW_ID } from "../constants";
 import type { ApprovalDecision, PendingExecution } from "../types";
@@ -67,8 +66,9 @@ function generateApprovalHtml(
     .card {
       background: var(--vscode-editorWidget-background);
       border: 1px solid var(--vscode-widget-border, var(--vscode-panel-border));
+      border-top: 3px solid #d97706;
       border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      box-shadow: var(--vscode-widget-shadow, 0 4px 12px rgba(0, 0, 0, 0.15));
       overflow: hidden;
       max-width: 900px;
       margin: 0 auto;
@@ -133,8 +133,8 @@ function generateApprovalHtml(
     }
 
     .change-badge.new {
-      background: rgba(25, 118, 210, 0.2);
-      color: #1976d2;
+      background: rgba(217, 119, 6, 0.2);
+      color: #d97706;
     }
 
     .header-content {
@@ -229,8 +229,7 @@ function generateApprovalHtml(
       max-height: 45vh;
       min-height: 120px;
       overflow: auto;
-      background: #282c34;
-      padding: 20px 24px;
+      padding: 14px 18px;
     }
 
     /* Custom scrollbar */
@@ -255,17 +254,17 @@ function generateApprovalHtml(
 
     .code-content {
       overflow-x: auto;
-      background: #282c34;
     }
 
     .code-content code {
       display: block;
       font-family: var(--vscode-editor-font-family, 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace);
-      font-size: 14px;
-      line-height: 1.6;
+      font-size: var(--vscode-editor-font-size, 13px);
+      line-height: var(--vscode-editor-line-height, 1.4);
       white-space: pre;
       color: var(--vscode-editor-foreground);
       tab-size: 4;
+      background: inherit;
     }
 
     /* Prism.js 共通トークンクラス */
@@ -329,8 +328,7 @@ function generateApprovalHtml(
 
     /* Bash専用トークン */
     .code-content .token.shebang {
-      color: var(--vscode-terminal-ansiMagenta, #c586c0);
-      font-weight: 600;
+      color: var(--vscode-editorLineNumber-foreground, #6a9955);
     }
 
     /* Choice Cards Section */
@@ -372,13 +370,13 @@ function generateApprovalHtml(
     }
 
     .choice-card.primary {
-      border-color: #1976d2;
-      background: #1976d2;
+      border-color: #16a34a;
+      background: #16a34a;
     }
 
     .choice-card.primary:hover {
-      background: #1565c0;
-      border-color: #1565c0;
+      background: #15803d;
+      border-color: #15803d;
     }
 
     .choice-card.primary .choice-title,
@@ -548,7 +546,7 @@ function generateApprovalHtml(
             <polyline points="4,17 10,11 4,5"/>
             <line x1="12" y1="19" x2="20" y2="19"/>
           </svg>
-          Script Content
+          ${escapeHtml(fileName)}
         </span>
       </div>
       <div class="code-container">
