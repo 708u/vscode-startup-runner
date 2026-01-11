@@ -23,6 +23,3 @@
     "source.organizeImports.biome": "explicit"
   }
 }
-
-// prompt に仕様書を全て含める
-// twig operatorにはtwigの操作のみを依頼する。それ以外のタスクは自分自身で責務を持つ
