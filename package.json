@@ -6,6 +6,7 @@
   "packageManager": "pnpm@10.27.0",
   "publisher": "708u",
   "license": "MIT",
+  "icon": "assets/icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/708u/vscode-startup-runner"
