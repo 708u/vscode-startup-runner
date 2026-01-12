@@ -36,6 +36,6 @@ export class HashStorage {
   }
 
   isEmpty(): boolean {
-    return this.getAllFilePaths().length === 0;
+    return Object.keys(this.getAll()).length === 0;
   }
 }

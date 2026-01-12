@@ -61,3 +61,13 @@ Key flow:
 2. Finds enabled tasks, filters duplicates, and checks for trigger files in workspace roots
 3. For each file: check saved hash -> if changed/new, show approval webview
 4. Execute approved files in isolated terminals
+
+## Documentation
+
+When changing implementation, check `docs/DEVELOPMENT.md` for consistency:
+
+- Contradiction: Documentation does not match actual implementation
+- Missing: New features or changes not reflected in documentation
+- Stale: Removed features still documented
+
+Update documentation when any of these issues are found.
