@@ -6,4 +6,5 @@ export default defineConfig({
 		timeout: 60000,
 	},
 	launchArgs: ['--user-data-dir=/tmp/vscode-test-data'],
+	workspaceFolder: '.',
 });
