@@ -2,7 +2,7 @@
   "name": "startup-runner",
   "displayName": "Startup Runner",
   "description": "Runs script on start up workspace",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "packageManager": "pnpm@10.27.0",
   "publisher": "708u",
   "license": "MIT",
