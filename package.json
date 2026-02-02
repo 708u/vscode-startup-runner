@@ -37,7 +37,7 @@
               },
               "file": {
                 "type": "string",
-                "description": "Trigger file name"
+                "description": "Trigger file path or glob pattern (e.g., '.startup/setup.sh', '*.sh')"
               },
               "enabled": {
                 "type": "boolean",

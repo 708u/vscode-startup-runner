@@ -1,12 +1,13 @@
 import * as path from "node:path";
 import * as vscode from "vscode";
-import { TERMINAL_NAME } from "./constants";
 import { HashStorage } from "./storage/hashStorage";
 import { PathApprovalStorage } from "./storage/pathApprovalStorage";
 import type { PendingExecution, Task } from "./types";
 import { tryReadFile } from "./utils/file";
 import { resolveToBaseStoragePath } from "./utils/git";
+import { expandGlobPattern, getRelativePath } from "./utils/glob";
 import { getHash } from "./utils/hash";
+import { buildTerminalName } from "./utils/terminal";
 import { requestApproval } from "./webview/approvalPanel";
 
 export { getHash } from "./utils/hash";
@@ -125,9 +126,12 @@ async function processApprovals(
   return approved;
 }
 
-function getOrCreateTerminal(taskName: string, hash: string): vscode.Terminal {
-  const shortHash = hash.slice(0, 7);
-  const terminalName = `${TERMINAL_NAME}: ${taskName} (${shortHash})`;
+function getOrCreateTerminal(
+  taskName: string,
+  filePath: string,
+  hash: string,
+): vscode.Terminal {
+  const terminalName = buildTerminalName(taskName, filePath, hash);
   const existing = vscode.window.terminals.find((t) => t.name === terminalName);
   return existing ?? vscode.window.createTerminal(terminalName);
 }
@@ -138,7 +142,11 @@ function executeApproved(approved: PendingExecution[]): void {
   }
 
   for (const pending of approved) {
-    const terminal = getOrCreateTerminal(pending.taskName, pending.hash);
+    const terminal = getOrCreateTerminal(
+      pending.taskName,
+      pending.filePath,
+      pending.hash,
+    );
     terminal.sendText(`bash "${pending.filePath}"`);
     terminal.show(true);
   }
@@ -186,20 +194,30 @@ export async function activate(
       return true;
     });
 
+    const seenFiles = new Set<string>();
     for (const task of uniqueTasks) {
-      const filePath = path.join(folder.uri.fsPath, task.file);
-      const storageKey = shareApproval
-        ? resolveToBaseStoragePath(folder.uri.fsPath, task.file)
-        : filePath;
-      const content = tryReadFile(filePath);
-      if (content) {
-        pendingExecutions.push({
-          taskName: task.name,
-          filePath,
-          storageKey,
-          content,
-          hash: getHash(content),
-        });
+      const expandedPaths = await expandGlobPattern(folder, task.file);
+
+      for (const filePath of expandedPaths) {
+        if (seenFiles.has(filePath)) {
+          continue;
+        }
+        seenFiles.add(filePath);
+
+        const relativePath = getRelativePath(folder.uri.fsPath, filePath);
+        const storageKey = shareApproval
+          ? resolveToBaseStoragePath(folder.uri.fsPath, relativePath)
+          : filePath;
+        const content = tryReadFile(filePath);
+        if (content) {
+          pendingExecutions.push({
+            taskName: task.name,
+            filePath,
+            storageKey,
+            content,
+            hash: getHash(content),
+          });
+        }
       }
     }
   }

@@ -45,7 +45,9 @@ src/
 │   ├── hash.ts               # SHA256 hashing
 │   ├── file.ts               # File I/O utilities
 │   ├── git.ts                # Git worktree detection
-│   └── html.ts               # HTML escaping
+│   ├── glob.ts               # Glob pattern expansion
+│   ├── html.ts               # HTML escaping
+│   └── terminal.ts           # Terminal name generation
 └── webview/
     ├── approvalPanel.ts      # Webview creation and messaging
     ├── highlight.ts          # Syntax highlighting with Prism.js
@@ -65,7 +67,7 @@ type ApprovedHashes = Record<FilePath, ContentHash>;
 
 interface Task {
   name: string;      // Task identifier
-  file: string;      // Relative path to trigger file
+  file: string;      // Relative path or glob pattern (e.g., "*.sh", "**/*.sh")
   enabled: boolean;  // Enable/disable flag
 }
 
@@ -245,6 +247,24 @@ Returns base repository path if worktree, otherwise returns workspace path.
 
 Escapes `&`, `<`, `>`, `"` characters to prevent XSS in webviews.
 
+### glob.ts
+
+`expandGlobPattern(workspaceFolder, pattern): Promise<string[]>`
+
+Expands a glob pattern to absolute file paths using VS Code's `findFiles` API.
+Returns sorted paths. Works for both glob patterns and plain paths.
+
+`getRelativePath(workspacePath: string, absolutePath: string): string`
+
+Converts an absolute path to a path relative to the workspace.
+
+### terminal.ts
+
+`buildTerminalName(taskName: string, filePath: string, hash: string): string`
+
+Builds a terminal name in the format `Startup Runner: taskName/filename (hash)`.
+The hash is truncated to 7 characters.
+
 ## Build System
 
 ### Scripts
@@ -271,8 +291,9 @@ This enables clean async/await flow in the activation logic.
 
 ### Terminal Deduplication
 
-Terminal names include the task name and first 7 characters of content hash.
-This prevents terminal proliferation and provides an audit trail.
+Terminal names include the task name, filename, and first 7 characters of
+content hash (e.g., `Startup Runner: taskName/script.sh (abc1234)`). This
+prevents terminal proliferation and provides an audit trail.
 
 ### Fail-Safe File I/O
 
