@@ -6,6 +6,7 @@ import { PathApprovalStorage } from "./storage/pathApprovalStorage";
 import type { PendingExecution, Task } from "./types";
 import { tryReadFile } from "./utils/file";
 import { resolveToBaseStoragePath } from "./utils/git";
+import { expandGlobPattern, getRelativePath } from "./utils/glob";
 import { getHash } from "./utils/hash";
 import { requestApproval } from "./webview/approvalPanel";
 
@@ -186,20 +187,30 @@ export async function activate(
       return true;
     });
 
+    const seenFiles = new Set<string>();
     for (const task of uniqueTasks) {
-      const filePath = path.join(folder.uri.fsPath, task.file);
-      const storageKey = shareApproval
-        ? resolveToBaseStoragePath(folder.uri.fsPath, task.file)
-        : filePath;
-      const content = tryReadFile(filePath);
-      if (content) {
-        pendingExecutions.push({
-          taskName: task.name,
-          filePath,
-          storageKey,
-          content,
-          hash: getHash(content),
-        });
+      const expandedPaths = await expandGlobPattern(folder, task.file);
+
+      for (const filePath of expandedPaths) {
+        if (seenFiles.has(filePath)) {
+          continue;
+        }
+        seenFiles.add(filePath);
+
+        const relativePath = getRelativePath(folder.uri.fsPath, filePath);
+        const storageKey = shareApproval
+          ? resolveToBaseStoragePath(folder.uri.fsPath, relativePath)
+          : filePath;
+        const content = tryReadFile(filePath);
+        if (content) {
+          pendingExecutions.push({
+            taskName: task.name,
+            filePath,
+            storageKey,
+            content,
+            hash: getHash(content),
+          });
+        }
       }
     }
   }

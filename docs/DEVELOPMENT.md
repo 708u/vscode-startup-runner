@@ -45,6 +45,7 @@ src/
 │   ├── hash.ts               # SHA256 hashing
 │   ├── file.ts               # File I/O utilities
 │   ├── git.ts                # Git worktree detection
+│   ├── glob.ts               # Glob pattern expansion
 │   └── html.ts               # HTML escaping
 └── webview/
     ├── approvalPanel.ts      # Webview creation and messaging
@@ -65,7 +66,7 @@ type ApprovedHashes = Record<FilePath, ContentHash>;
 
 interface Task {
   name: string;      // Task identifier
-  file: string;      // Relative path to trigger file
+  file: string;      // Relative path or glob pattern (e.g., "*.sh", "**/*.sh")
   enabled: boolean;  // Enable/disable flag
 }
 
@@ -244,6 +245,22 @@ Returns base repository path if worktree, otherwise returns workspace path.
 `escapeHtml(text: string): string`
 
 Escapes `&`, `<`, `>`, `"` characters to prevent XSS in webviews.
+
+### glob.ts
+
+`isGlobPattern(pattern: string): boolean`
+
+Checks if a string contains glob special characters (`*`, `?`, `[`, `{`).
+
+`expandGlobPattern(workspaceFolder, pattern): Promise<string[]>`
+
+Expands a glob pattern to absolute file paths using VS Code's `findFiles` API.
+Returns sorted paths. For non-glob patterns, returns single-element array with
+the absolute path.
+
+`getRelativePath(workspacePath: string, absolutePath: string): string`
+
+Converts an absolute path to a path relative to the workspace.
 
 ## Build System
 
