@@ -27,7 +27,8 @@ Add to your `settings.json`:
 ```json
 {
   "startupRunner.tasks": [
-    { "name": "default", "file": ".autorun", "enabled": true }
+    { "name": "default", "file": ".autorun", "enabled": true },
+    { "name": "shell-scripts", "file": ".startup/*.sh", "enabled": true }
   ]
 }
 ```
@@ -43,7 +44,7 @@ This extension contributes the following settings:
 
 - `startupRunner.tasks`: List of tasks with trigger files
   - `name`: Task name
-  - `file`: Trigger file name
+  - `file`: Trigger file path or glob pattern (e.g., `.autorun`, `*.sh`, `**/*.sh`)
   - `enabled`: Enable this task
 
 Default: `[]` (empty, no tasks configured)
