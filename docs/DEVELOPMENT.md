@@ -46,7 +46,8 @@ src/
 │   ├── file.ts               # File I/O utilities
 │   ├── git.ts                # Git worktree detection
 │   ├── glob.ts               # Glob pattern expansion
-│   └── html.ts               # HTML escaping
+│   ├── html.ts               # HTML escaping
+│   └── terminal.ts           # Terminal name generation
 └── webview/
     ├── approvalPanel.ts      # Webview creation and messaging
     ├── highlight.ts          # Syntax highlighting with Prism.js
@@ -248,19 +249,21 @@ Escapes `&`, `<`, `>`, `"` characters to prevent XSS in webviews.
 
 ### glob.ts
 
-`isGlobPattern(pattern: string): boolean`
-
-Checks if a string contains glob special characters (`*`, `?`, `[`, `{`).
-
 `expandGlobPattern(workspaceFolder, pattern): Promise<string[]>`
 
 Expands a glob pattern to absolute file paths using VS Code's `findFiles` API.
-Returns sorted paths. For non-glob patterns, returns single-element array with
-the absolute path.
+Returns sorted paths. Works for both glob patterns and plain paths.
 
 `getRelativePath(workspacePath: string, absolutePath: string): string`
 
 Converts an absolute path to a path relative to the workspace.
+
+### terminal.ts
+
+`buildTerminalName(taskName: string, filePath: string, hash: string): string`
+
+Builds a terminal name in the format `Startup Runner: taskName/filename (hash)`.
+The hash is truncated to 7 characters.
 
 ## Build System
 

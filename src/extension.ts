@@ -1,6 +1,5 @@
 import * as path from "node:path";
 import * as vscode from "vscode";
-import { TERMINAL_NAME } from "./constants";
 import { HashStorage } from "./storage/hashStorage";
 import { PathApprovalStorage } from "./storage/pathApprovalStorage";
 import type { PendingExecution, Task } from "./types";
@@ -8,6 +7,7 @@ import { tryReadFile } from "./utils/file";
 import { resolveToBaseStoragePath } from "./utils/git";
 import { expandGlobPattern, getRelativePath } from "./utils/glob";
 import { getHash } from "./utils/hash";
+import { buildTerminalName } from "./utils/terminal";
 import { requestApproval } from "./webview/approvalPanel";
 
 export { getHash } from "./utils/hash";
@@ -131,9 +131,7 @@ function getOrCreateTerminal(
   filePath: string,
   hash: string,
 ): vscode.Terminal {
-  const shortHash = hash.slice(0, 7);
-  const fileName = path.basename(filePath);
-  const terminalName = `${TERMINAL_NAME}: ${taskName}/${fileName} (${shortHash})`;
+  const terminalName = buildTerminalName(taskName, filePath, hash);
   const existing = vscode.window.terminals.find((t) => t.name === terminalName);
   return existing ?? vscode.window.createTerminal(terminalName);
 }
