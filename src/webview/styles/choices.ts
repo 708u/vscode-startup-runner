@@ -61,6 +61,16 @@ export const choicesStyles = `
   background: var(--vscode-inputValidation-warningBackground, rgba(255, 204, 0, 0.1));
 }
 
+.choice-card.caution {
+  border-color: #e65c00;
+  border-width: 2px;
+  background: rgba(230, 92, 0, 0.08);
+}
+
+.choice-card.caution:hover {
+  background: rgba(230, 92, 0, 0.15);
+}
+
 .choice-card.danger {
   border-color: var(--vscode-errorForeground);
 }
@@ -108,6 +118,14 @@ export const choicesStyles = `
 
 .choice-card.warning .choice-icon svg {
   color: var(--vscode-editorWarning-foreground, #cca700);
+}
+
+.choice-card.caution .choice-icon {
+  background: rgba(230, 92, 0, 0.25);
+}
+
+.choice-card.caution .choice-icon svg {
+  color: #e65c00;
 }
 
 .choice-card.danger .choice-icon {

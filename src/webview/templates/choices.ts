@@ -9,9 +9,9 @@ export function renderChoices(options: ChoicesOptions = {}): string {
 
   const globButton = globPattern
     ? `
-      <button class="choice-card warning" onclick="respond('allowByGlob')">
+      <button class="choice-card caution" onclick="respond('allowByGlob')">
         <div class="choice-icon">
-          ${icons.warning}
+          ${icons.asterisk}
         </div>
         <div class="choice-content">
           <div class="choice-title">Allow by Glob <span class="danger-badge">Dangerous</span></div>
