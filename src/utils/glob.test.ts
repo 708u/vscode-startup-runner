@@ -6,14 +6,15 @@ import { expandGlobPattern, getRelativePath } from "./glob";
 
 suite("expandGlobPattern", () => {
   const testDir = ".test-glob-tmp";
-  let workspaceFolder: vscode.WorkspaceFolder | undefined;
-  let testDirPath: string | undefined;
+  let workspaceFolder: vscode.WorkspaceFolder;
+  let testDirPath: string;
 
   suiteSetup(() => {
     const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders || workspaceFolders.length === 0) {
-      return;
-    }
+    assert.ok(
+      workspaceFolders && workspaceFolders.length > 0,
+      "Workspace folder is required for this test",
+    );
     workspaceFolder = workspaceFolders[0];
     testDirPath = path.join(workspaceFolder.uri.fsPath, testDir);
 
@@ -29,15 +30,10 @@ suite("expandGlobPattern", () => {
   });
 
   suiteTeardown(() => {
-    if (testDirPath) {
-      fs.rmSync(testDirPath, { recursive: true, force: true });
-    }
+    fs.rmSync(testDirPath, { recursive: true, force: true });
   });
 
   test("should match *.sh in directory", async () => {
-    if (!workspaceFolder) {
-      return;
-    }
     const result = await expandGlobPattern(workspaceFolder, `${testDir}/*.sh`);
 
     assert.strictEqual(result.length, 2);
@@ -47,9 +43,6 @@ suite("expandGlobPattern", () => {
   });
 
   test("should match **/*.sh recursively", async () => {
-    if (!workspaceFolder) {
-      return;
-    }
     const result = await expandGlobPattern(
       workspaceFolder,
       `${testDir}/**/*.sh`,
@@ -62,9 +55,6 @@ suite("expandGlobPattern", () => {
   });
 
   test("should match specific file without glob", async () => {
-    if (!workspaceFolder) {
-      return;
-    }
     const result = await expandGlobPattern(workspaceFolder, `${testDir}/a.sh`);
 
     assert.strictEqual(result.length, 1);
@@ -72,9 +62,6 @@ suite("expandGlobPattern", () => {
   });
 
   test("should not match different extension", async () => {
-    if (!workspaceFolder) {
-      return;
-    }
     const result = await expandGlobPattern(workspaceFolder, `${testDir}/*.txt`);
 
     assert.strictEqual(result.length, 1);
@@ -82,9 +69,6 @@ suite("expandGlobPattern", () => {
   });
 
   test("should return sorted results", async () => {
-    if (!workspaceFolder) {
-      return;
-    }
     const result = await expandGlobPattern(
       workspaceFolder,
       `${testDir}/**/*.sh`,
@@ -95,9 +79,6 @@ suite("expandGlobPattern", () => {
   });
 
   test("should return empty array for non-matching pattern", async () => {
-    if (!workspaceFolder) {
-      return;
-    }
     const result = await expandGlobPattern(
       workspaceFolder,
       `${testDir}/**/*.nonexistent`,
