@@ -1,8 +1,10 @@
 import * as path from "node:path";
+import picomatch from "picomatch";
 import * as vscode from "vscode";
 
 export function isGlobPattern(pattern: string): boolean {
-  return /[*?[{]/.test(pattern);
+  const state = picomatch.scan(pattern);
+  return state.isGlob;
 }
 
 export async function expandGlobPattern(
