@@ -34,7 +34,7 @@ function generateApprovalHtml(
     highlightedContent,
   });
 
-  const choicesHtml = renderChoices();
+  const choicesHtml = renderChoices({ globPattern: pending.globPattern });
 
   return `<!DOCTYPE html>
 <html>

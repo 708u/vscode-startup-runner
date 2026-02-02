@@ -1,6 +1,26 @@
 import { icons } from "../icons";
 
-export function renderChoices(): string {
+interface ChoicesOptions {
+  globPattern?: string;
+}
+
+export function renderChoices(options: ChoicesOptions = {}): string {
+  const { globPattern } = options;
+
+  const globButton = globPattern
+    ? `
+      <button class="choice-card warning" onclick="respond('allowByGlob')">
+        <div class="choice-icon">
+          ${icons.warning}
+        </div>
+        <div class="choice-content">
+          <div class="choice-title">Allow by Glob <span class="danger-badge">Dangerous</span></div>
+          <div class="choice-desc">Auto-execute all files matching "${globPattern}" even if content changes.</div>
+        </div>
+      </button>
+`
+    : "";
+
   return `
     <div class="choices">
       <button class="choice-card primary" onclick="respond('allow')">
@@ -22,7 +42,7 @@ export function renderChoices(): string {
           <div class="choice-desc">Execute now without saving approval. You'll be asked again next time.</div>
         </div>
       </button>
-
+${globButton}
       <button class="choice-card warning" onclick="respond('allowByPath')">
         <div class="choice-icon">
           ${icons.warning}

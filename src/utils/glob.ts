@@ -1,6 +1,10 @@
 import * as path from "node:path";
 import * as vscode from "vscode";
 
+export function isGlobPattern(pattern: string): boolean {
+  return /[*?[\]]/.test(pattern);
+}
+
 export async function expandGlobPattern(
   workspaceFolder: vscode.WorkspaceFolder,
   pattern: string,
