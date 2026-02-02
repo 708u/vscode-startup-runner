@@ -126,9 +126,14 @@ async function processApprovals(
   return approved;
 }
 
-function getOrCreateTerminal(taskName: string, hash: string): vscode.Terminal {
+function getOrCreateTerminal(
+  taskName: string,
+  filePath: string,
+  hash: string,
+): vscode.Terminal {
   const shortHash = hash.slice(0, 7);
-  const terminalName = `${TERMINAL_NAME}: ${taskName} (${shortHash})`;
+  const fileName = path.basename(filePath);
+  const terminalName = `${TERMINAL_NAME}: ${taskName}/${fileName} (${shortHash})`;
   const existing = vscode.window.terminals.find((t) => t.name === terminalName);
   return existing ?? vscode.window.createTerminal(terminalName);
 }
@@ -139,7 +144,11 @@ function executeApproved(approved: PendingExecution[]): void {
   }
 
   for (const pending of approved) {
-    const terminal = getOrCreateTerminal(pending.taskName, pending.hash);
+    const terminal = getOrCreateTerminal(
+      pending.taskName,
+      pending.filePath,
+      pending.hash,
+    );
     terminal.sendText(`bash "${pending.filePath}"`);
     terminal.show(true);
   }
