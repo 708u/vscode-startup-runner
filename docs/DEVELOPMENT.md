@@ -288,8 +288,9 @@ This enables clean async/await flow in the activation logic.
 
 ### Terminal Deduplication
 
-Terminal names include the task name and first 7 characters of content hash.
-This prevents terminal proliferation and provides an audit trail.
+Terminal names include the task name, filename, and first 7 characters of
+content hash (e.g., `Startup Runner: taskName/script.sh (abc1234)`). This
+prevents terminal proliferation and provides an audit trail.
 
 ### Fail-Safe File I/O
 
