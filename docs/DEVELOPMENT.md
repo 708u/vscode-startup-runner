@@ -40,7 +40,8 @@ src/
 ├── constants.ts              # Global constants
 ├── storage/
 │   ├── hashStorage.ts        # Content-hash approval storage
-│   └── pathApprovalStorage.ts # Path-based approval storage
+│   ├── pathApprovalStorage.ts # Path-based approval storage
+│   └── globApprovalStorage.ts # Glob pattern approval storage
 ├── utils/
 │   ├── hash.ts               # SHA256 hashing
 │   ├── file.ts               # File I/O utilities
@@ -77,9 +78,15 @@ interface PendingExecution {
   storageKey: FilePath;  // May differ from filePath (worktree handling)
   content: string;
   hash: ContentHash;     // SHA256 of content
+  globPattern?: string;  // Original glob pattern if matched via glob
 }
 
-type ApprovalDecision = "allow" | "allowByPath" | "once" | "deny";
+type ApprovalDecision =
+  | "allow"
+  | "allowByPath"
+  | "allowByGlob"
+  | "once"
+  | "deny";
 ```
 
 ## Activation Flow
@@ -96,7 +103,7 @@ The extension activates on `onStartupFinished` and follows these steps:
 
 ## Security Model
 
-The extension uses a two-layer approval system to protect users from malicious
+The extension uses a three-layer approval system to protect users from malicious
 scripts.
 
 ### Content-Hash Approval
@@ -113,11 +120,20 @@ option suits dynamically generated scripts that change frequently.
 
 Storage location: VS Code global state (`startupRunner.approvedPaths`)
 
+### Glob-Based Approval
+
+`GlobApprovalStorage` stores glob patterns of approved file groups. When a file
+matches an approved glob pattern, the extension executes it without prompting.
+This option appears only when the task uses a glob pattern.
+
+Storage location: VS Code global state (`startupRunner.approvedGlobs`)
+
 ### Approval Decisions
 
 | Decision | Behavior | Storage |
 |----------|----------|---------|
 | Allow Content | Store content hash, re-ask if changed | Hash storage |
+| Allow by Glob | Trust glob pattern, never re-ask for matching files | Glob storage |
 | Allow by Path | Trust path, never re-ask | Path storage |
 | Run Once | Execute without saving | None |
 | Deny | Skip execution | None |
@@ -212,9 +228,9 @@ Configure tasks in workspace settings (`.vscode/settings.json`):
 
 Command ID: `startupRunner.resetApprovedFiles`
 
-Opens a QuickPick dialog listing all approved files. Users can select files to
-remove from approval storage. The description shows whether each file uses
-content-based or path-based approval.
+Opens a QuickPick dialog listing all approved files and patterns. Users can
+select items to remove from approval storage. The description shows whether each
+item uses content-based, path-based, or glob-based approval.
 
 ## Utility Modules
 
@@ -248,6 +264,10 @@ Returns base repository path if worktree, otherwise returns workspace path.
 Escapes `&`, `<`, `>`, `"` characters to prevent XSS in webviews.
 
 ### glob.ts
+
+`isGlobPattern(pattern: string): boolean`
+
+Checks if a string contains glob pattern characters (`*`, `?`, `[`, `]`).
 
 `expandGlobPattern(workspaceFolder, pattern): Promise<string[]>`
 

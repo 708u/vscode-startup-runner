@@ -14,6 +14,12 @@ export interface PendingExecution {
   storageKey: FilePath;
   content: string;
   hash: ContentHash;
+  globPattern?: string;
 }
 
-export type ApprovalDecision = "allow" | "allowByPath" | "once" | "deny";
+export type ApprovalDecision =
+  | "allow"
+  | "allowByPath"
+  | "allowByGlob"
+  | "once"
+  | "deny";
