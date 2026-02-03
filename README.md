@@ -62,16 +62,34 @@ following security considerations:
 
 ### Security Model
 
+The extension uses a three-layer approval system:
+
 1. **Workspace Trust Integration**: The extension only runs in trusted
    workspaces. If VS Code's Workspace Trust is not granted, no scripts will
    execute.
 
-2. **Hash-based Approval**: Each script's content is hashed (SHA256). When a
+2. **Content-Hash Approval**: Each script's content is hashed (SHA256). When a
    script is first encountered or modified, you must explicitly approve it
    through a review dialog.
 
-3. **Content Review**: Before approval, the full script content is displayed
+3. **Path-Based Approval**: Approves a file path regardless of content changes.
+   Suitable for dynamically generated scripts that change frequently.
+
+4. **Glob-Based Approval**: Approves all files matching a glob pattern. This
+   option appears only when the task uses a glob pattern (e.g., `*.sh`).
+
+5. **Content Review**: Before approval, the full script content is displayed
    in a webview panel so you can inspect what will be executed.
+
+### Approval Decisions
+
+| Decision | Behavior |
+|----------|----------|
+| Allow Content | Store content hash, re-ask if changed |
+| Allow by Glob | Trust glob pattern, never re-ask for matching files |
+| Allow by Path | Trust path, never re-ask |
+| Run Once | Execute without saving |
+| Deny | Skip execution |
 
 ### Best Practices
 
